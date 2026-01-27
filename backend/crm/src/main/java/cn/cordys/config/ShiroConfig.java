@@ -3,6 +3,7 @@ package cn.cordys.config;
 import cn.cordys.common.security.ApiKeyFilter;
 import cn.cordys.common.security.AuthFilter;
 import cn.cordys.common.security.CsrfFilter;
+import cn.cordys.common.security.DirectAuthFilter;
 import cn.cordys.common.security.realm.LocalRealm;
 import cn.cordys.common.util.CommonBeanFactory;
 import cn.cordys.security.ShiroFilter;
@@ -25,6 +26,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
+import org.springframework.core.env.Environment;
 import org.springframework.web.filter.DelegatingFilterProxy;
 
 import java.util.ArrayList;
@@ -56,7 +58,7 @@ public class ShiroConfig {
      * @return 配置好的 {@link ShiroFilterFactoryBean} 实例
      */
     @Bean
-    public ShiroFilterFactoryBean shiroFilterFactoryBean(final DefaultWebSecurityManager sessionManager) {
+    public ShiroFilterFactoryBean shiroFilterFactoryBean(final DefaultWebSecurityManager sessionManager, Environment environment) {
         final var bean = new ShiroFilterFactoryBean();
         bean.setLoginUrl("/");
         bean.setSecurityManager(sessionManager);
@@ -69,6 +71,7 @@ public class ShiroConfig {
         filters.put("apikey", new ApiKeyFilter());
         filters.put("csrf", new CsrfFilter());
         filters.put("authc", new AuthFilter());
+        filters.put("direct", buildDirectAuthFilter(environment));
 
         chain.putAll(ShiroFilter.loadBaseFilterChain());
         chain.putAll(ShiroFilter.ignoreCsrfFilter());
@@ -79,8 +82,15 @@ public class ShiroConfig {
         return bean;
     }
 
+    private Filter buildDirectAuthFilter(Environment env) {
+        boolean basicEnabled = env.getProperty("api.direct.basic.enabled", Boolean.class, Boolean.TRUE);
+        String bearerToken = env.getProperty("api.direct.bearer.token");
+        String bearerUser = env.getProperty("api.direct.bearer.user", "admin");
+        return new DirectAuthFilter(basicEnabled, bearerToken, bearerUser);
+    }
+
     private void configureXFilter(Map<String, String> chain, Map<String, Filter> filters) {
-        String pattern = "apikey, csrf, authc";
+        String pattern = "direct, apikey, csrf, authc";
         final Filter preApiKey = CommonBeanFactory.getFilter();
         if (preApiKey != null) {
             filters.put("preApikey", preApiKey);

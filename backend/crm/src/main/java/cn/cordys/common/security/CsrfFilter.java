@@ -55,6 +55,13 @@ public class CsrfFilter extends AnonymousFilter {
             return true;
         }
 
+        // DirectAuth (Basic/Bearer) 请求无需 CSRF 校验，受 Shiro 权限控制。
+        String authorization = httpServletRequest.getHeader(HttpHeaders.AUTHORIZATION);
+        if (StringUtils.startsWithIgnoreCase(authorization, "Basic ")
+                || StringUtils.startsWithIgnoreCase(authorization, "Bearer ")) {
+            return true;
+        }
+
         // WebSocket 请求无需 CSRF 校验
         String websocketKey = httpServletRequest.getHeader("Sec-WebSocket-Key");
         if (StringUtils.isNotBlank(websocketKey)) {
