@@ -1,15 +1,21 @@
 package cn.cordys.crm.contract.dto.request;
 
-import lombok.Data;
 import cn.cordys.common.dto.BasePageRequest;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Data;
 
 /**
+ * 发票分页查询入参
  *
  * @author jianxing
  * @date 2025-12-29 18:22:59
  */
 @Data
 public class ContractInvoicePageRequest extends BasePageRequest {
-    public String getContractId() {return null;}
-    public String getCustomerId() {return null;}
+
+    @Schema(description = "合同ID")
+    private String contractId;
+
+    @Schema(description = "客户ID")
+    private String customerId;
 }
