@@ -375,6 +375,8 @@ export const {
   getAccountPaymentStatistic,
   getAccountPaymentRecord,
   getAccountPaymentRecordStatistic,
+  getCustomerInvoiceList,
+  getCustomerInvoiceStatistic,
 } = customerApi;
 
 export const {
@@ -456,6 +458,7 @@ export const {
   getBusinessTitleThirdQueryOption,
   getBusinessTitleConfig,
   switchBusinessTitleFormConfig,
+  getBusinessTitleModuleForm,
   addInvoiced,
   updateInvoiced,
   deleteInvoiced,
@@ -477,6 +480,9 @@ export const {
   deleteContractInvoicedView,
   dragContractInvoicedView,
   getInvoicedTab,
+  getInvoicedInContractList,
+  getContractDetailSnapshot,
+  getInvoicedDetailSnapshot,
 } = contractApi;
 
 export const {
@@ -564,6 +570,7 @@ export const {
   getFieldClueList,
   getFieldContractList,
   getFieldContractPaymentPlanList,
+  getFieldContractPaymentRecordList,
   deleteReasonItem,
   deleteAttachment,
   moduleNavListSort,
@@ -602,6 +609,7 @@ export const {
   getFieldPriceList,
   getFieldQuotationList,
   getFieldDisplayList,
+  getFieldBusinessTitleList,
 } = moduleApi;
 
 export const {

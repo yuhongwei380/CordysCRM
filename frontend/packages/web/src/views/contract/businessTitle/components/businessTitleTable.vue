@@ -16,7 +16,7 @@
     <template #actionLeft>
       <div class="flex items-center gap-[12px]">
         <n-button v-permission="['CONTRACT_BUSINESS_TITLE:ADD']" type="primary" @click="handleNewClick">
-          {{ t('common.newCreate') }}
+          {{ t('contract.businessTitle.add') }}
         </n-button>
         <CrmImportButton
           v-if="hasAnyPermission(['CONTRACT_BUSINESS_TITLE:IMPORT'])"
@@ -52,7 +52,12 @@
     @load="() => searchData()"
     @cancel="handleCancel"
   />
-  <detail v-model:visible="showDetailDrawer" :source-id="activeSourceId" @cancel="handleCancel" />
+  <detail
+    v-model:visible="showDetailDrawer"
+    :source-id="activeSourceId"
+    @cancel="handleCancel"
+    @load="() => searchData()"
+  />
   <CrmTableExportModal
     v-model:show="showExportModal"
     :params="exportParams"
@@ -75,16 +80,15 @@
   import { ExportTableColumnItem } from '@lib/shared/models/common';
   import type { BusinessTitleItem } from '@lib/shared/models/contract';
 
-  import { COMMON_SELECTION_OPERATORS } from '@/components/pure/crm-advance-filter/index';
   import CrmAdvanceFilter from '@/components/pure/crm-advance-filter/index.vue';
   import { FilterForm, FilterFormItem, FilterResult } from '@/components/pure/crm-advance-filter/type';
-  import CrmIcon from '@/components/pure/crm-icon-font/index.vue';
   import type { ActionsItem } from '@/components/pure/crm-more-action/type';
   import CrmNameTooltip from '@/components/pure/crm-name-tooltip/index.vue';
   import CrmTable from '@/components/pure/crm-table/index.vue';
   import { BatchActionConfig, CrmDataTableColumn } from '@/components/pure/crm-table/type';
   import useTable from '@/components/pure/crm-table/useTable';
   import CrmTableButton from '@/components/pure/crm-table-button/index.vue';
+  import CrmBusinessNamePrefix from '@/components/business/crm-business-name-prefix/index.vue';
   import CrmImportButton from '@/components/business/crm-import-button/index.vue';
   import CrmOperationButton from '@/components/business/crm-operation-button/index.vue';
   import CrmTableExportModal from '@/components/business/crm-table-export-modal/index.vue';
@@ -136,7 +140,7 @@
       const type = isInvoiceChecked ? 'default' : 'error';
       openModal({
         type,
-        title: t('common.deleteConfirmTitle', { name: characterLimit(row.businessName) }),
+        title: t('common.deleteConfirmTitle', { name: characterLimit(row.name) }),
         content,
         positiveText,
         negativeText: t('common.cancel'),
@@ -215,27 +219,13 @@
     },
     {
       title: t('contract.businessTitle.companyName'),
-      key: 'businessName',
+      key: 'name',
       sortOrder: false,
       sorter: true,
       width: 200,
       fixed: 'left',
       columnSelectorDisabled: true,
       render: (row: BusinessTitleItem) => {
-        const createNamePrefix = () =>
-          row.type === 'thirdParty'
-            ? h(CrmIcon, {
-                type: 'iconicon_enterprise',
-                size: 16,
-                class: 'text-[var(--primary-8)]',
-              })
-            : h(
-                'div',
-                {
-                  class: 'business-title-icon',
-                },
-                '自'
-              );
         const createNameButton = () =>
           h(
             'div',
@@ -243,7 +233,7 @@
             {
               default: () => {
                 return [
-                  createNamePrefix(),
+                  h(CrmBusinessNamePrefix, { type: row.type }),
                   h(
                     CrmTableButton,
                     {
@@ -251,8 +241,8 @@
                       onClick: () => showDetail(row),
                     },
                     {
-                      default: () => row.businessName,
-                      trigger: () => row.businessName,
+                      default: () => row.name,
+                      trigger: () => row.name,
                     }
                   ),
                 ];
@@ -261,17 +251,15 @@
           );
 
         return props.readonly
-          ? [
-              h(
-                'div',
-                {
-                  class: 'flex items-center gap-[8px]',
-                },
-                {
-                  default: () => [createNamePrefix(), h(CrmNameTooltip, { text: row.businessName })],
-                }
-              ),
-            ]
+          ? h(
+              CrmNameTooltip,
+              {
+                text: row.name,
+              },
+              {
+                prefix: () => h(CrmBusinessNamePrefix, { type: row.type }),
+              }
+            )
           : createNameButton();
       },
     },
@@ -284,21 +272,6 @@
         tooltip: true,
       },
       width: 200,
-    },
-    {
-      title: t('contract.businessTitle.dataSource'),
-      key: 'type',
-      sortOrder: false,
-      sorter: true,
-      ellipsis: {
-        tooltip: true,
-      },
-      width: 200,
-      render: (row: BusinessTitleItem) => {
-        return row.type === 'thirdParty'
-          ? t('contract.businessTitle.addMethodThird')
-          : t('contract.businessTitle.addMethodCustom');
-      },
     },
     {
       title: t('contract.businessTitle.taxpayerNumber'),
@@ -492,7 +465,7 @@
   const filterConfigList = computed<FilterFormItem[]>(() => [
     {
       title: t('contract.businessTitle.companyName'),
-      dataIndex: 'businessName',
+      dataIndex: 'name',
       type: FieldTypeEnum.INPUT,
     },
     {
@@ -501,19 +474,7 @@
       type: FieldTypeEnum.INPUT,
     },
     {
-      title: t('contract.businessTitle.dataSource'),
-      dataIndex: 'type',
-      type: FieldTypeEnum.SELECT_MULTIPLE,
-      operatorOption: COMMON_SELECTION_OPERATORS,
-      selectProps: {
-        options: [
-          { label: t('contract.businessTitle.addMethodThird'), value: 'thirdParty' },
-          { label: t('contract.businessTitle.addMethodCustom'), value: 'custom' },
-        ],
-      },
-    },
-    {
-      title: t('contract.businessTitle.bankAccount'),
+      title: t('contract.businessTitle.taxpayerNumber'),
       dataIndex: 'identificationNumber',
       type: FieldTypeEnum.INPUT,
     },
@@ -530,7 +491,7 @@
     {
       title: t('contract.businessTitle.capital'),
       dataIndex: 'registeredCapital',
-      type: FieldTypeEnum.INPUT_NUMBER,
+      type: FieldTypeEnum.INPUT,
     },
     {
       title: t('contract.businessTitle.address'),

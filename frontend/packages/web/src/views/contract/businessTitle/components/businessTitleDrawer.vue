@@ -22,7 +22,7 @@
           />
         </n-form-item>
         <n-form-item
-          path="businessName"
+          path="name"
           :label="t('contract.businessTitle.companyName')"
           :rule="[
             {
@@ -33,19 +33,20 @@
           ]"
         >
           <n-input
-            v-if="form.type === 'custom'"
-            v-model:value="form.businessName"
+            v-if="form.type === 'CUSTOM'"
+            v-model:value="form.name"
             allow-clear
             :maxlength="255"
             :placeholder="t('common.pleaseInput')"
           />
           <CrmAutoSearchSelect
             v-else
-            v-model:value="form.businessName"
+            v-model:value="form.name"
             :fetch="getBusinessTitleThirdQueryOption"
             :placeholder="t('contract.businessTitle.selectCompanyPlaceholder')"
             label-key="name"
             value-key="id"
+            :disabled="!isEnableQccConfig && form.id && originType === 'THIRD_PARTY'"
             @select="handleAutoFillInfo"
           />
         </n-form-item>
@@ -60,7 +61,7 @@
             <n-input
               v-model:value="form[item.field]"
               allow-clear
-              :disabled="form.type === 'thirdParty'"
+              :disabled="form.type === 'THIRD_PARTY'"
               :maxlength="255"
               :placeholder="t('common.pleaseInput')"
             />
@@ -95,6 +96,8 @@
   } from '@/api/modules';
   import { businessTitleFormConfigList } from '@/config/contract';
 
+  import { initBusinessTitleForm } from '../config';
+
   const { t } = useI18n();
   const Message = useMessage();
 
@@ -111,31 +114,17 @@
     required: true,
   });
 
-  const initForm: SaveBusinessTitleParams = {
-    id: '',
-    type: 'thirdParty',
-    businessName: '',
-    identificationNumber: '',
-    openingBank: '',
-    bankAccount: '',
-    phoneNumber: '',
-    registeredCapital: '',
-    companySize: '',
-    registrationNumber: '',
-    registrationAddress: '',
-  };
-
   const form = ref<SaveBusinessTitleParams>({
-    ...initForm,
+    ...initBusinessTitleForm,
   });
 
   const tabList = [
     {
-      name: 'thirdParty',
+      name: 'THIRD_PARTY',
       tab: t('contract.businessTitle.addMethodThird'),
     },
     {
-      name: 'custom',
+      name: 'CUSTOM',
       tab: t('contract.businessTitle.addMethodCustom'),
     },
   ];
@@ -147,7 +136,8 @@
       const result = await getBusinessTitleThirdQuery(businessName);
       form.value = {
         ...result,
-        type: 'thirdParty',
+        id: props.sourceId ?? '',
+        type: 'THIRD_PARTY',
       };
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -159,16 +149,24 @@
     handleQueryByBusinessName(businessName);
   }
 
+  const initFormCache = {
+    THIRD_PARTY: { ...initBusinessTitleForm, type: 'THIRD_PARTY' },
+    CUSTOM: { ...initBusinessTitleForm, type: 'CUSTOM' },
+  };
+
+  const formCache = ref<Record<string, SaveBusinessTitleParams>>(cloneDeep(initFormCache));
+
   function handleChangeTab() {
     form.value = {
-      ...initForm,
+      ...formCache.value[form.value.type],
       id: form.value.id,
       type: form.value.type,
     };
   }
 
   function cancelHandler() {
-    form.value = { ...initForm };
+    form.value = { ...initBusinessTitleForm };
+    formCache.value = cloneDeep(initFormCache);
     emit('cancel');
     visible.value = false;
   }
@@ -186,7 +184,10 @@
         Message.success(t('common.addSuccess'));
       }
       if (isContinue) {
-        form.value = cloneDeep(initForm);
+        form.value = {
+          ...initBusinessTitleForm,
+          type: form.value.type,
+        };
       } else {
         cancelHandler();
       }
@@ -213,6 +214,7 @@
       const result = await getBusinessTitleDetail(props.sourceId);
       form.value = { ...result };
       originType.value = result.type;
+      formCache.value[result.type] = cloneDeep(result);
     } catch (error) {
       // eslint-disable-next-line no-console
       console.log(error);
@@ -224,7 +226,7 @@
   const showType = computed(() => {
     if (isEnableQccConfig.value) return true;
     if (form.value.id) {
-      return originType.value === 'thirdParty';
+      return originType.value === 'THIRD_PARTY';
     }
   });
 
@@ -233,7 +235,7 @@
       const result = await getThirdPartyConfig(CompanyTypeEnum.QCC);
       isEnableQccConfig.value = !!result && !!result.config && !!result.config?.qccEnable;
       if (!isEnableQccConfig.value && !form.value.id) {
-        form.value.type = 'custom';
+        form.value.type = 'CUSTOM';
       }
     } catch (error) {
       // eslint-disable-next-line no-console
@@ -249,6 +251,7 @@
         const e = result.find((c) => c.field === item.value);
         return {
           ...e,
+          field: e?.field ?? item.value,
           title: item.label,
           rule: e?.required
             ? [

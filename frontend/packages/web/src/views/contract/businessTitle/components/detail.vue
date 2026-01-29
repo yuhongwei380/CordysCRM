@@ -4,9 +4,12 @@
     :width="1000"
     no-padding
     :footer="false"
-    :title="detailInfo?.businessName ?? ''"
+    :title="detailInfo?.name ?? ''"
     @cancel="handleCancel"
   >
+    <template #titleLeft>
+      <CrmBusinessNamePrefix v-if="detailInfo?.type" :type="detailInfo?.type" />
+    </template>
     <template #titleRight>
       <CrmButtonGroup class="gap-[12px]" :list="buttonList" not-show-divider @select="handleButtonClick" />
     </template>
@@ -53,6 +56,7 @@
   import CrmCard from '@/components/pure/crm-card/index.vue';
   import CrmDescription, { Description } from '@/components/pure/crm-description/index.vue';
   import CrmDrawer from '@/components/pure/crm-drawer/index.vue';
+  import CrmBusinessNamePrefix from '@/components/business/crm-business-name-prefix/index.vue';
   import businessTitleDrawer from './businessTitleDrawer.vue';
 
   import {
@@ -157,7 +161,7 @@
       const type = isInvoiceChecked ? 'default' : 'error';
       openModal({
         type,
-        title: t('common.deleteConfirmTitle', { name: characterLimit(detailInfo.value?.businessName) }),
+        title: t('common.deleteConfirmTitle', { name: characterLimit(detailInfo.value?.name) }),
         content,
         positiveText,
         negativeText: t('common.cancel'),
@@ -238,7 +242,8 @@
       if (newVal) {
         initDetail();
       }
-    }
+    },
+    { immediate: true }
   );
 </script>
 

@@ -1,7 +1,7 @@
 import { ModuleField } from '@lib/shared/models/customer';
 import { AttachmentInfo } from '@cordys/web/src/components/business/crm-form-create/types';
 import { QuotationStatusEnum } from '@lib/shared/enums/opportunityEnum';
-import { ContractBusinessTitleStatusEnum, type ContractInvoiceEnum } from '@lib/shared/enums/contractEnum';
+import { ContractBusinessTitleStatusEnum, type ContractInvoiceStatusEnum } from '@lib/shared/enums/contractEnum';
 import type { TableQueryParams } from './common';
 import type { FormDesignConfigDetailParams } from './system/module';
 
@@ -12,6 +12,7 @@ export interface ContractItem {
   customerId: string;
   customerName: string;
   amount: number;
+  alreadyPayAmount: number;
   approvalStatus: QuotationStatusEnum;
   stage: string;
   owner: string;
@@ -144,8 +145,8 @@ export interface UpdatePaymentRecordParams extends SavePaymentRecordParams {
 
 export interface BusinessTitleItem {
   id: string;
-  businessName: string;
-  type: string;
+  name: string;
+  type: 'THIRD_PARTY' | 'CUSTOM';
   identificationNumber: string;
   openingBank: string;
   bankAccount: string;
@@ -167,7 +168,7 @@ export interface BusinessTitleItem {
 
 export interface SaveBusinessTitleParams {
   id?: string;
-  businessName: string; // 公司名称
+  name: string; // 公司名称
   identificationNumber: string; // 纳税人识别号
   openingBank: string; // 开户银行
   bankAccount: string; // 银行账号
@@ -199,8 +200,12 @@ export interface ContractInvoiceItem {
   name: string;
   no: string;
   owner: string;
+  businessTitleId: string;
+  businessTitleName: string;
   organizationId: string;
+  createUser: string;
   createUserName: string;
+  updateUser: string;
   updateUserName: string;
   ownerName: string;
   departmentId: string;
@@ -214,7 +219,7 @@ export interface ContractInvoiceItem {
   moduleFields: ModuleField[]; // 自定义字段
   recordAmount: number;
   recordEndTime: number;
-  approvalStatus: ContractInvoiceEnum;
+  approvalStatus: ContractInvoiceStatusEnum;
 }
 export interface SaveContractInvoiceParams {
   name: string;

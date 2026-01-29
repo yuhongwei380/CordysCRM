@@ -90,6 +90,7 @@ export default {
   'crmFormDesign.dataSourceFilterValuePlaceholder': '请选择当前表单字段',
   'crmFormDesign.dataSourceFilterDataIndexPlaceholder': '请选择{type}表单字段',
   'crmFormDesign.dataSourceFilterTip': '添加过滤条件后，仅展示符合条件的数据',
+  'crmFormDesign.dataSourceFilterSetTip': '已设置 {count} 条过滤',
   'crmFormDesign.dataSourceDisplayField': '显示字段',
   'crmFormDesign.showFieldCount': '已设置 {count} 个显示字段',
   'crmFormDesign.serialNumber': '流水号',
@@ -204,4 +205,6 @@ export default {
   'crmFormDesign.fixedCols': '列',
   'crmFormDesign.subTableField': '表格字段',
   'crmFormDesign.addSubField': '添加子字段',
+  'crmFormDesign.quotingData': '引用其他表单',
+  'crmFormDesign.currentFormField': '当前表单字段',
 };

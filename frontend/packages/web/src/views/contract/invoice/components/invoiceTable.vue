@@ -86,13 +86,14 @@
     :readonly="props.readonly"
     @refresh="searchData"
     @open-contract-drawer="showContractDrawer"
+    @open-customer-drawer="showCustomerDrawer"
   />
 </template>
 
 <script setup lang="ts">
   import { DataTableRowKey, NButton, useMessage } from 'naive-ui';
 
-  import { ContractInvoiceEnum } from '@lib/shared/enums/contractEnum';
+  import { ContractInvoiceStatusEnum } from '@lib/shared/enums/contractEnum';
   import { FieldTypeEnum, FormDesignKeyEnum } from '@lib/shared/enums/formDesignEnum';
   import { useI18n } from '@lib/shared/hooks/useI18n';
   import useLocale from '@lib/shared/locale/useLocale';
@@ -114,21 +115,17 @@
   import contractInvoiceStatus from './contractInvoiceStatus.vue';
   import DetailDrawer from './detail.vue';
 
-  import { batchDeleteInvoiced, deletePaymentPlan } from '@/api/modules';
+  import { batchDeleteInvoiced, deleteInvoiced, revokeInvoiced } from '@/api/modules';
   import { baseFilterConfigList } from '@/config/clue';
   import { contractInvoiceStatusOptions, deleteInvoiceContentMap } from '@/config/contract';
   import useFormCreateApi from '@/hooks/useFormCreateApi';
   import useFormCreateTable from '@/hooks/useFormCreateTable';
   import useModal from '@/hooks/useModal';
+  import useUserStore from '@/store/modules/user';
   import { getExportColumns } from '@/utils/export';
   import { hasAnyPermission } from '@/utils/permission';
 
   import { ContractRouteEnum } from '@/enums/routeEnum';
-
-  const { t } = useI18n();
-  const Message = useMessage();
-  const { currentLocale } = useLocale(Message.loading);
-  const { openModal } = useModal();
 
   const props = defineProps<{
     fullscreenTargetRef?: HTMLElement | null;
@@ -138,8 +135,16 @@
     readonly?: boolean;
   }>();
   const emit = defineEmits<{
+    (e: 'openBusinessTitleDrawer', params: { id: string }): void;
     (e: 'openContractDrawer', params: { id: string }): void;
+    (e: 'openCustomerDrawer', params: { customerId: string; inCustomerPool: boolean; poolId: string }): void;
   }>();
+
+  const { t } = useI18n();
+  const Message = useMessage();
+  const { currentLocale } = useLocale(Message.loading);
+  const { openModal } = useModal();
+  const useStore = useUserStore();
 
   const activeTab = ref();
   const keyword = ref('');
@@ -212,8 +217,8 @@
   function handleBatchDelete() {
     openModal({
       type: 'error',
-      title: t('customer.batchDeleteTitleTip', { number: checkedRowKeys.value.length }),
-      content: t('customer.batchDeleteContentTip'),
+      title: t('invoice.batchDeleteTitle', { count: checkedRowKeys.value.length }),
+      content: t('invoice.batchDelete'),
       positiveText: t('common.confirmDelete'),
       negativeText: t('common.cancel'),
       onPositiveClick: async () => {
@@ -272,29 +277,54 @@
     ...baseFilterConfigList,
   ]);
 
-  const operationGroupList = computed<ActionsItem[]>(() => {
+  function getOperationGroupList(row: ContractInvoiceItem) {
+    if (props.readonly) {
+      return [];
+    }
+    if (row.approvalStatus === ContractInvoiceStatusEnum.APPROVING) {
+      return [
+        {
+          label: t('common.approval'),
+          key: 'approval',
+          permission: ['CONTRACT_INVOICE:APPROVAL'],
+        },
+        ...(row.createUser === useStore.userInfo.id
+          ? [
+              {
+                label: t('common.revoke'),
+                key: 'revoke',
+              },
+            ]
+          : []),
+        {
+          label: t('common.delete'),
+          key: 'delete',
+          permission: ['CONTRACT_INVOICE:DELETE'],
+        },
+      ];
+    }
+    if (row.approvalStatus === ContractInvoiceStatusEnum.APPROVED) {
+      return [
+        {
+          label: t('common.delete'),
+          key: 'delete',
+          permission: ['CONTRACT_INVOICE:DELETE'],
+        },
+      ];
+    }
     return [
-      ...(!props.readonly
-        ? [
-            {
-              label: t('common.approval'),
-              key: 'approval',
-              permission: ['CONTRACT_INVOICE:APPROVAL'],
-            },
-            {
-              label: t('common.edit'),
-              key: 'edit',
-              permission: ['CONTRACT_INVOICE:UPDATE'],
-            },
-            {
-              label: t('common.delete'),
-              key: 'delete',
-              permission: ['CONTRACT_INVOICE:DELETE'],
-            },
-          ]
-        : []),
+      {
+        label: t('common.edit'),
+        key: 'edit',
+        permission: ['CONTRACT_INVOICE:UPDATE'],
+      },
+      {
+        label: t('common.delete'),
+        key: 'delete',
+        permission: ['CONTRACT_INVOICE:DELETE'],
+      },
     ];
-  });
+  }
 
   const showDetailDrawer = ref(false);
 
@@ -302,12 +332,12 @@
     openModal({
       type: 'error',
       title: t('common.deleteConfirmTitle', { name: row.name }),
-      content: deleteInvoiceContentMap[row.approvalStatus as ContractInvoiceEnum],
+      content: deleteInvoiceContentMap[row.approvalStatus as ContractInvoiceStatusEnum],
       positiveText: t('common.confirmDelete'),
       negativeText: t('common.cancel'),
       onPositiveClick: async () => {
         try {
-          await deletePaymentPlan(row.id);
+          await deleteInvoiced(row.id);
           Message.success(t('common.deleteSuccess'));
           tableRefreshId.value += 1;
         } catch (error) {
@@ -329,13 +359,30 @@
     showDetailDrawer.value = true;
   }
 
+  async function handleRevoke(row: ContractInvoiceItem) {
+    try {
+      await revokeInvoiced(row.id);
+      Message.success(t('common.revokeSuccess'));
+      tableRefreshId.value += 1;
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error(error);
+    }
+  }
+
   async function handleActionSelect(row: ContractInvoiceItem, actionKey: string) {
     switch (actionKey) {
       case 'edit':
         handleEdit(row.id);
         break;
+      case 'revoke':
+        handleRevoke(row);
+        break;
       case 'delete':
         handleDelete(row);
+        break;
+      case 'approval':
+        showDetail(row.id);
         break;
       default:
         break;
@@ -352,15 +399,29 @@
     }
   }
 
+  function showCustomerDrawer(params: { customerId: string; inCustomerPool: boolean; poolId: string }) {
+    emit('openCustomerDrawer', {
+      customerId: params.customerId,
+      inCustomerPool: params.inCustomerPool,
+      poolId: params.poolId,
+    });
+  }
+
+  function showBusinessTitleDetail(businessTitleId: string) {
+    emit('openBusinessTitleDrawer', {
+      id: businessTitleId,
+    });
+  }
+
   const { useTableRes, customFieldsFilterConfig } = await useFormCreateTable({
-    formKey: FormDesignKeyEnum.INVOICE,
+    formKey: props.isContractTab ? FormDesignKeyEnum.CONTRACT_INVOICE : FormDesignKeyEnum.INVOICE,
     operationColumn: {
       key: 'operation',
       width: currentLocale.value === 'en-US' ? 180 : 150,
       fixed: 'right',
       render: (row: ContractInvoiceItem) =>
         h(CrmOperationButton, {
-          groupList: operationGroupList.value,
+          groupList: getOperationGroupList(row),
           onSelect: (key: string) => handleActionSelect(row, key),
         }),
     },
@@ -399,6 +460,24 @@
         h(contractInvoiceStatus, {
           status: row.approvalStatus,
         }),
+      businessTitleId: (row: ContractInvoiceItem) =>
+        hasAnyPermission(['CONTRACT_BUSINESS_TITLE:READ'])
+          ? h(
+              CrmTableButton,
+              {
+                onClick: () => {
+                  showBusinessTitleDetail(row.businessTitleId);
+                },
+              },
+              { default: () => row.businessTitleName, trigger: () => row.businessTitleName }
+            )
+          : h(
+              CrmNameTooltip,
+              { text: row.businessTitleName },
+              {
+                default: () => row.businessTitleName,
+              }
+            ),
     },
     permission: ['CONTRACT_INVOICE:EXPORT'],
     containerClass: `.crm-contract-payment-table-${FormDesignKeyEnum.INVOICE}`,

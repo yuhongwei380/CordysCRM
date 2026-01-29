@@ -103,6 +103,10 @@ import {
   ListContractInvoicedViewUrl,
   UpdateContractInvoicedViewUrl,
   AddContractInvoicedViewUrl,
+  BusinessTitleModuleFormUrl,
+  ContractInvoicedInContractPageUrl,
+  GetContractDetailSnapshotUrl,
+  ContractInvoicedDetailSnapshotUrl,
 } from '@lib/shared/api/requrls/contract';
 import type { CustomerTabHidden } from '@lib/shared/models/customer';
 import type {
@@ -162,6 +166,11 @@ export default function useContractApi(CDR: CordysAxios) {
   // 合同详情
   function getContractDetail(id: string) {
     return CDR.get<ContractDetail>({ url: `${GetContractDetailUrl}/${id}` });
+  }
+
+  // 合同详情快照
+  function getContractDetailSnapshot(id: string) {
+    return CDR.get<ContractDetail>({ url: `${GetContractDetailSnapshotUrl}/${id}` });
   }
 
   // 获取合同表单配置
@@ -545,9 +554,19 @@ export default function useContractApi(CDR: CordysAxios) {
     return CDR.get({ url: `${BusinessTitleFormConfigSwitchUrl}/${id}` });
   }
 
+  // 获取工商抬头表单字段
+  function getBusinessTitleModuleForm() {
+    return CDR.get<FormDesignConfigDetailParams>({ url: BusinessTitleModuleFormUrl });
+  }
+
   // 发票列表
   function getInvoicedList(data: ContractInvoiceTableQueryParam) {
     return CDR.post<CommonList<ContractInvoiceItem>>({ url: ContractInvoicedPageUrl, data });
+  }
+
+  // 合同下的发票列表
+  function getInvoicedInContractList(data: ContractInvoiceTableQueryParam) {
+    return CDR.post<CommonList<ContractInvoiceItem>>({ url: ContractInvoicedInContractPageUrl, data });
   }
 
   // 添加发票
@@ -563,6 +582,11 @@ export default function useContractApi(CDR: CordysAxios) {
   // 发票详情
   function getInvoicedDetail(id: string) {
     return CDR.get<ContractInvoiceDetail>({ url: `${ContractInvoicedDetailUrl}/${id}` });
+  }
+
+  // 发票详情快照
+  function getInvoicedDetailSnapshot(id: string) {
+    return CDR.get<ContractInvoiceDetail>({ url: `${ContractInvoicedDetailSnapshotUrl}/${id}` });
   }
 
   // 获取发票表单配置
@@ -596,7 +620,7 @@ export default function useContractApi(CDR: CordysAxios) {
 
   // 发票批量删除
   function batchDeleteInvoiced(ids: string[]) {
-    return CDR.post({ url: ContractInvoicedBatchDeleteUrl, data: { ids } });
+    return CDR.post({ url: ContractInvoicedBatchDeleteUrl, data: ids });
   }
 
   // 导出全量发票
@@ -659,6 +683,7 @@ export default function useContractApi(CDR: CordysAxios) {
     exportContractSelected,
     generateContractChart,
     getContractDetail,
+    getContractDetailSnapshot,
     getContractList,
     getContractTab,
     getContractViewDetail,
@@ -736,11 +761,14 @@ export default function useContractApi(CDR: CordysAxios) {
     getBusinessTitleThirdQueryOption,
     getBusinessTitleConfig,
     switchBusinessTitleFormConfig,
+    getBusinessTitleModuleForm,
     // 发票
     getInvoicedList,
+    getInvoicedInContractList,
     addInvoiced,
     updateInvoiced,
     getInvoicedDetail,
+    getInvoicedDetailSnapshot,
     getInvoicedFormConfig,
     getInvoicedFormSnapshotConfig,
     approvalInvoiced,

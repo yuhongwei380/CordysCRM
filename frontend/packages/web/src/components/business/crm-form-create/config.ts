@@ -4,6 +4,7 @@ import {
   FieldTypeEnum,
   FormDesignKeyEnum,
 } from '@lib/shared/enums/formDesignEnum';
+import { useI18n } from '@lib/shared/hooks/useI18n';
 import type { CommonList } from '@lib/shared/models/common';
 import type { FormDesignConfigDetailParams } from '@lib/shared/models/system/module';
 
@@ -32,6 +33,7 @@ import {
   getAdvancedCustomerContactList,
   getAdvancedOpenSeaCustomerList,
   getAdvancedSearchClueList,
+  getBusinessTitleModuleForm,
   getClue,
   getClueFollowPlan,
   getClueFollowRecord,
@@ -41,6 +43,7 @@ import {
   getClueTransitionCustomerList,
   getContactListUnderCustomer,
   getContractDetail,
+  getContractDetailSnapshot,
   getContractFormConfig,
   getContractFormSnapshotConfig,
   getContractList,
@@ -61,7 +64,10 @@ import {
   getFollowRecordDetail,
   getFollowRecordPage,
   getInvoicedDetail,
+  getInvoicedDetailSnapshot,
   getInvoicedFormConfig,
+  getInvoicedFormSnapshotConfig,
+  getInvoicedInContractList,
   getInvoicedList,
   getOpenSeaCustomer,
   getOpenSeaCustomerList,
@@ -112,6 +118,8 @@ import {
 
 import type { FormCreateField, FormCreateFieldRule, FormDetail } from './types';
 
+const { t } = useI18n();
+
 export const multipleValueTypeList = [
   FieldTypeEnum.MEMBER_MULTIPLE,
   FieldTypeEnum.DEPARTMENT_MULTIPLE,
@@ -121,6 +129,64 @@ export const multipleValueTypeList = [
   FieldTypeEnum.INPUT_MULTIPLE,
   FieldTypeEnum.ATTACHMENT,
   FieldTypeEnum.LINK,
+];
+
+// 所有数据源和表单
+export const fullFormSettingList = [
+  {
+    label: t('crmFormDesign.customer'),
+    dataSource: FieldDataSourceTypeEnum.CUSTOMER,
+    formKey: FormDesignKeyEnum.CUSTOMER,
+  },
+  {
+    label: t('crmFormDesign.contract'),
+    dataSource: FieldDataSourceTypeEnum.CONTACT,
+    formKey: FormDesignKeyEnum.CONTACT,
+  },
+  {
+    label: t('crmFormDesign.opportunity'),
+    dataSource: FieldDataSourceTypeEnum.BUSINESS,
+    formKey: FormDesignKeyEnum.BUSINESS,
+  },
+  {
+    label: t('crmFormDesign.product'),
+    dataSource: FieldDataSourceTypeEnum.PRODUCT,
+    formKey: FormDesignKeyEnum.PRODUCT,
+  },
+  {
+    label: t('crmFormDesign.clue'),
+    dataSource: FieldDataSourceTypeEnum.CLUE,
+    formKey: FormDesignKeyEnum.CLUE,
+  },
+  {
+    label: t('crmFormCreate.drawer.price'),
+    dataSource: FieldDataSourceTypeEnum.PRICE,
+    formKey: FormDesignKeyEnum.PRICE,
+  },
+  {
+    label: t('crmFormCreate.drawer.quotation'),
+    dataSource: FieldDataSourceTypeEnum.QUOTATION,
+    formKey: FormDesignKeyEnum.OPPORTUNITY_QUOTATION,
+  },
+  {
+    label: t('module.contract'),
+    dataSource: FieldDataSourceTypeEnum.CONTRACT,
+    formKey: FormDesignKeyEnum.CONTRACT,
+  },
+  {
+    label: t('module.paymentPlan'),
+    dataSource: FieldDataSourceTypeEnum.CONTRACT_PAYMENT,
+    formKey: FormDesignKeyEnum.CONTRACT_PAYMENT,
+  },
+  {
+    label: t('module.paymentRecord'),
+    dataSource: FieldDataSourceTypeEnum.CONTRACT_PAYMENT_RECORD,
+    formKey: FormDesignKeyEnum.CONTRACT_PAYMENT_RECORD,
+  },
+  {
+    label: t('module.businessTitle'),
+    dataSource: FieldDataSourceTypeEnum.BUSINESS_TITLE,
+  },
 ];
 
 export const inputDefaultFieldConfig: FormCreateField = {
@@ -198,6 +264,8 @@ export const radioDefaultFieldConfig: FormCreateField = {
   showLabel: true,
   defaultValue: '',
   description: '',
+  optionSource: 'custom',
+  refId: null,
   options: [],
   readable: true,
   editable: true,
@@ -215,6 +283,8 @@ export const checkboxDefaultFieldConfig: FormCreateField = {
   showLabel: true,
   defaultValue: [],
   description: '',
+  optionSource: 'custom',
+  refId: null,
   options: [],
   readable: true,
   editable: true,
@@ -230,6 +300,8 @@ export const selectDefaultFieldConfig: FormCreateField = {
   name: 'crmFormDesign.select',
   fieldWidth: 1,
   showLabel: true,
+  optionSource: 'custom',
+  refId: null,
   options: [],
   defaultValue: '',
   description: '',
@@ -247,6 +319,8 @@ export const selectMultipleDefaultFieldConfig: FormCreateField = {
   name: 'crmFormDesign.selectMultiple',
   fieldWidth: 1,
   showLabel: true,
+  optionSource: 'custom',
+  refId: null,
   options: [],
   defaultValue: [],
   description: '',
@@ -479,17 +553,7 @@ export const dataSourceDefaultFieldConfig: FormCreateField = {
   dataSourceType: FieldDataSourceTypeEnum.CUSTOMER,
   combineSearch: {
     searchMode: 'OR', // 默认搜索模式
-    conditions: [
-      {
-        leftFieldId: undefined,
-        leftFieldType: FieldTypeEnum.INPUT,
-        operator: undefined,
-        rightFieldId: undefined,
-        rightFieldCustom: false,
-        rightFieldCustomValue: '',
-        rightFieldType: FieldTypeEnum.INPUT, // 默认右侧字段类型为输入框
-      },
-    ],
+    conditions: [],
   },
 };
 
@@ -511,17 +575,7 @@ export const dataSourceMultipleDefaultFieldConfig: FormCreateField = {
   dataSourceType: FieldDataSourceTypeEnum.CUSTOMER,
   combineSearch: {
     searchMode: 'OR', // 默认搜索模式
-    conditions: [
-      {
-        leftFieldId: undefined,
-        leftFieldType: FieldTypeEnum.INPUT,
-        operator: undefined,
-        rightFieldId: undefined,
-        rightFieldCustom: false,
-        rightFieldCustomValue: '',
-        rightFieldType: FieldTypeEnum.INPUT, // 默认右侧字段类型为输入框
-      },
-    ],
+    conditions: [],
   },
 };
 
@@ -619,6 +673,12 @@ export const advancedFields: FormCreateField[] = [
   priceTableDefaultFieldConfig,
 ];
 
+export function getFieldIcon(type: FieldTypeEnum) {
+  const allFields = [...basicFields, ...advancedFields];
+  const field = allFields.find((f) => f.type === type);
+  return field?.icon;
+}
+
 export const rules: FormCreateFieldRule[] = [
   {
     key: FieldRuleEnum.REQUIRED,
@@ -704,6 +764,9 @@ export const getFormConfigApiMap: Record<FormDesignKeyEnum, (id?: string) => Pro
   [FormDesignKeyEnum.PRICE]: getProductPriceFormConfig,
   [FormDesignKeyEnum.CONTRACT_PAYMENT_RECORD]: getPaymentRecordFormConfig,
   [FormDesignKeyEnum.INVOICE]: getInvoicedFormConfig,
+  [FormDesignKeyEnum.INVOICE_SNAPSHOT]: (id) => getInvoicedFormSnapshotConfig(id),
+  [FormDesignKeyEnum.CONTRACT_INVOICE]: getInvoicedFormConfig,
+  [FormDesignKeyEnum.BUSINESS_TITLE]: getBusinessTitleModuleForm,
 };
 
 export const createFormApi: Record<FormDesignKeyEnum, (data: any) => Promise<any>> = {
@@ -741,6 +804,9 @@ export const createFormApi: Record<FormDesignKeyEnum, (data: any) => Promise<any
   [FormDesignKeyEnum.PRICE]: addProductPrice,
   [FormDesignKeyEnum.CONTRACT_PAYMENT_RECORD]: addPaymentRecord,
   [FormDesignKeyEnum.INVOICE]: addInvoiced,
+  [FormDesignKeyEnum.INVOICE_SNAPSHOT]: addInvoiced,
+  [FormDesignKeyEnum.CONTRACT_INVOICE]: async () => ({}),
+  [FormDesignKeyEnum.BUSINESS_TITLE]: async () => ({}),
 };
 
 export const updateFormApi: Record<FormDesignKeyEnum, (data: any) => Promise<any>> = {
@@ -778,6 +844,9 @@ export const updateFormApi: Record<FormDesignKeyEnum, (data: any) => Promise<any
   [FormDesignKeyEnum.PRICE]: updateProductPrice,
   [FormDesignKeyEnum.CONTRACT_PAYMENT_RECORD]: updatePaymentRecord,
   [FormDesignKeyEnum.INVOICE]: updateInvoiced,
+  [FormDesignKeyEnum.INVOICE_SNAPSHOT]: updateInvoiced,
+  [FormDesignKeyEnum.CONTRACT_INVOICE]: async () => ({}),
+  [FormDesignKeyEnum.BUSINESS_TITLE]: async () => ({}),
 };
 
 export const getFormDetailApiMap: Partial<Record<FormDesignKeyEnum, (id: string) => Promise<FormDetail>>> = {
@@ -805,14 +874,15 @@ export const getFormDetailApiMap: Partial<Record<FormDesignKeyEnum, (id: string)
   [FormDesignKeyEnum.SEARCH_ADVANCED_CLUE_POOL]: getPoolClue,
   [FormDesignKeyEnum.SEARCH_ADVANCED_OPPORTUNITY]: getOpportunityDetail,
   [FormDesignKeyEnum.CONTRACT]: getContractDetail,
-  [FormDesignKeyEnum.CONTRACT_SNAPSHOT]: getContractDetail,
+  [FormDesignKeyEnum.CONTRACT_SNAPSHOT]: getContractDetailSnapshot,
   [FormDesignKeyEnum.CONTRACT_PAYMENT]: getPaymentPlanDetail,
   [FormDesignKeyEnum.CONTRACT_CONTRACT_PAYMENT]: getPaymentPlanDetail,
   [FormDesignKeyEnum.OPPORTUNITY_QUOTATION]: getQuotationDetail,
-  [FormDesignKeyEnum.PRICE]: getProductPrice,
   [FormDesignKeyEnum.OPPORTUNITY_QUOTATION_SNAPSHOT]: getQuotationSnapshotDetail,
+  [FormDesignKeyEnum.PRICE]: getProductPrice,
   [FormDesignKeyEnum.CONTRACT_PAYMENT_RECORD]: getPaymentRecordDetail,
   [FormDesignKeyEnum.INVOICE]: getInvoicedDetail,
+  [FormDesignKeyEnum.INVOICE_SNAPSHOT]: getInvoicedDetailSnapshot,
 };
 
 export const getFormListApiMap: Partial<Record<FormDesignKeyEnum, (data: any) => Promise<CommonList<any>>>> = {
@@ -842,6 +912,7 @@ export const getFormListApiMap: Partial<Record<FormDesignKeyEnum, (data: any) =>
   [FormDesignKeyEnum.PRICE]: getProductPriceList,
   [FormDesignKeyEnum.CONTRACT_PAYMENT_RECORD]: getPaymentRecordList,
   [FormDesignKeyEnum.INVOICE]: getInvoicedList,
+  [FormDesignKeyEnum.CONTRACT_INVOICE]: getInvoicedInContractList,
 };
 
 export const dataSourceFilterFormKeyMap: Partial<Record<FieldDataSourceTypeEnum, FormDesignKeyEnum>> = {
@@ -853,5 +924,6 @@ export const dataSourceFilterFormKeyMap: Partial<Record<FieldDataSourceTypeEnum,
   [FieldDataSourceTypeEnum.PRICE]: FormDesignKeyEnum.PRICE,
   [FieldDataSourceTypeEnum.CONTRACT]: FormDesignKeyEnum.CONTRACT,
   [FieldDataSourceTypeEnum.CONTRACT_PAYMENT]: FormDesignKeyEnum.CONTRACT_PAYMENT,
+  [FieldDataSourceTypeEnum.CONTRACT_PAYMENT_RECORD]: FormDesignKeyEnum.CONTRACT_PAYMENT_RECORD,
   [FieldDataSourceTypeEnum.QUOTATION]: FormDesignKeyEnum.OPPORTUNITY_QUOTATION,
 };

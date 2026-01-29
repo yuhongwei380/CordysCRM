@@ -301,6 +301,10 @@ export const {
   addInvoiced,
   updateInvoiced,
   getInvoicedList,
+  getBusinessTitleModuleForm,
+  getInvoicedInContractList,
+  getContractDetailSnapshot,
+  getInvoicedDetailSnapshot,
 } = contractApi;
 
 export const {
@@ -355,6 +359,8 @@ export const {
   getFieldPriceList,
   getFieldQuotationList,
   getFieldContractPaymentPlanList,
+  getFieldContractPaymentRecordList,
+  getFieldBusinessTitleList,
 } = moduleApi;
 
 export const {

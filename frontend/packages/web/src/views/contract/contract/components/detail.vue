@@ -51,8 +51,20 @@
               detailInfo?.stage === ContractStatusEnum.VOID ||
               detailInfo?.approvalStatus === QuotationStatusEnum.APPROVING
             "
+            @refresh="handleSaved()"
           />
         </template>
+        <InvoiceTable
+          v-if="activeTab === 'invoice'"
+          :sourceId="props.sourceId"
+          :sourceName="title"
+          is-contract-tab
+          :readonly="
+            detailInfo?.stage === ContractStatusEnum.VOID ||
+            detailInfo?.approvalStatus === QuotationStatusEnum.APPROVING
+          "
+          @open-business-title-drawer="showBusinessTitleDetail"
+        />
       </CrmCard>
     </div>
     <CrmFormCreateDrawer
@@ -87,6 +99,7 @@
   import CrmFormDescription from '@/components/business/crm-form-description/index.vue';
   import PaymentTable from '@/views/contract/contractPaymentPlan/components/paymentTable.vue';
   import PaymentRecordTable from '@/views/contract/contractPaymentRecord/components/paymentTable.vue';
+  import InvoiceTable from '@/views/contract/invoice/components/invoiceTable.vue';
 
   import { approvalContract, deleteContract, revokeContract } from '@/api/modules';
   import { contractStatusOptions } from '@/config/contract';
@@ -101,6 +114,7 @@
   const emit = defineEmits<{
     (e: 'refresh'): void;
     (e: 'showCustomerDrawer', params: { customerId: string; inCustomerPool: boolean; poolId: string }): void;
+    (e: 'openBusinessTitleDrawer', params: { id: string }): void;
   }>();
 
   const visible = defineModel<boolean>('visible', {
@@ -136,6 +150,11 @@
         name: 'paymentRecord',
         tab: t('module.paymentRecord'),
         permission: ['CONTRACT_PAYMENT_RECORD:READ'],
+      },
+      {
+        name: 'invoice',
+        tab: t('module.invoice'),
+        permission: ['CONTRACT_INVOICE:READ'],
       },
     ].filter((item) => hasAnyPermission(item.permission))
   );
@@ -184,15 +203,21 @@
     }
     if (detailInfo.value?.approvalStatus === QuotationStatusEnum.APPROVED) {
       return [
-        {
-          label: t('contract.payment'),
-          key: 'paymentRecord',
-          permission: ['CONTRACT:PAYMENT'],
-          text: false,
-          ghost: true,
-          class: 'n-btn-outline-primary',
-          disabled: !detailInfo.value.amount,
-        },
+        ...(detailInfo.value?.stage !== ContractStatusEnum.VOID
+          ? [
+              {
+                label: t('contract.payment'),
+                key: 'paymentRecord',
+                permission: ['CONTRACT:PAYMENT'],
+                text: false,
+                ghost: true,
+                class: 'n-btn-outline-primary',
+                disabled: !detailInfo.value?.amount || detailInfo.value?.alreadyPayAmount >= detailInfo.value?.amount,
+                tooltipContent:
+                  detailInfo.value?.alreadyPayAmount >= detailInfo.value?.amount ? t('contract.noPaymentRequired') : '',
+              },
+            ]
+          : []),
         {
           label: t('common.delete'),
           key: 'delete',
@@ -337,5 +362,9 @@
       default:
         break;
     }
+  }
+
+  function showBusinessTitleDetail(params: { id: string }) {
+    emit('openBusinessTitleDrawer', params);
   }
 </script>
