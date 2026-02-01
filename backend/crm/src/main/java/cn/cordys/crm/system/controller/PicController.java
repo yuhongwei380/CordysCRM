@@ -32,4 +32,10 @@ public class PicController {
     public ResponseEntity<org.springframework.core.io.Resource> preview(@PathVariable String id) {
         return picService.getResource(id);
     }
+
+    @GetMapping("/download/{id}")
+    @Operation(summary = "下载图片")
+    public ResponseEntity<org.springframework.core.io.Resource> download(@PathVariable String id) {
+        return picService.getResource(id);
+    }
 }

@@ -39,4 +39,10 @@ public class AttachmentController {
     public ResponseEntity<org.springframework.core.io.Resource> download(@PathVariable String id) {
         return attachmentService.getResource(id);
     }
+
+    @GetMapping("/delete/{id}")
+    @Operation(summary = "删除附件")
+    public void delete(@PathVariable String id) {
+        attachmentService.delete(id);
+    }
 }
