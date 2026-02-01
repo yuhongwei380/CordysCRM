@@ -17,6 +17,27 @@ fail() {
   exit 1
 }
 
+json_get() {
+  local path="$1" desc="$2"
+  local resp code payload
+  resp=$(curl -k -u "${USERNAME}:${PASSWORD}" \
+    -H "Organization-Id: ${ORG_ID}" \
+    -s -w 'HTTPSTATUS:%{http_code}' \
+    "${BASE_URL}${path}") || fail "request failed: ${desc}"
+  code="${resp##*HTTPSTATUS:}"
+  payload="${resp%HTTPSTATUS:*}"
+  if [[ "${code}" != "200" ]]; then
+    fail "${desc} http ${code} (expected 200)"
+  fi
+  if [[ -z "${payload// }" ]]; then
+    log "${desc} OK but payload empty"
+  else
+    log "${desc} OK (${code}), payload:"
+    pretty_print "${payload}"
+  fi
+  echo
+}
+
 pretty_print() {
   local payload="$1"
   if [[ -n "${JQ_BIN}" ]]; then
@@ -77,19 +98,29 @@ log "System version payload:"
 pretty_print "$(curl -k -u "${USERNAME}:${PASSWORD}" -s "${BASE_URL}/system/version")"
 echo
 
-# 4) Opportunity page data (pageSize=1) + payload
+# 4) Home statistics (empty payload uses defaults) + payload
+json_post "/home/statistic/lead" '{}' "Home lead statistics"
+json_post "/home/statistic/opportunity" '{}' "Home opportunity statistics"
+json_post "/home/statistic/opportunity/success" '{}' "Home success opportunity statistics"
+json_get "/home/statistic/department/tree" "Home department tree"
+
+# 5) Dashboard module tree/count
+json_get "/dashboard/module/tree" "Dashboard module tree"
+json_get "/dashboard/module/count" "Dashboard module count"
+
+# 6) Opportunity page data (pageSize=1) + payload
 json_post "/opportunity/page" '{"current":1,"pageSize":1}' "Opportunity page"
 
-# 5) Contract list (pageSize=1)
+# 7) Contract list (pageSize=1)
 json_post "/contract/page" '{"current":1,"pageSize":1}' "Contract page"
 
-# 6) Contract payment plan (pageSize=1)
+# 8) Contract payment plan (pageSize=1)
 json_post "/contract/payment-plan/page" '{"current":1,"pageSize":1}' "Contract payment plan page"
 
-# 7) Contract payment record (pageSize=1)
+# 9) Contract payment record (pageSize=1)
 json_post "/contract/payment-record/page" '{"current":1,"pageSize":1}' "Contract payment record page"
 
-# 8) Contract invoice (pageSize=1)
+# 10) Contract invoice (pageSize=1)
 json_post "/invoice/page" '{"current":1,"pageSize":1}' "Invoice page"
 
 log "REST API smoke test done"
