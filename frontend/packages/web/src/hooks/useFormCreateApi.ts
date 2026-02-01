@@ -302,7 +302,7 @@ export default function useFormCreateApi(props: FormCreateApiProps) {
           const controlField = fieldList.value.find((f) => f.id === ruleId);
           if (controlField) {
             // 处理显示规则
-            if (fieldShowControlMap.value[fieldId][ruleId].includes(value || formDetail.value[controlField.id])) {
+            if (fieldShowControlMap.value[fieldId][ruleId].includes(formDetail.value[controlField.id])) {
               field.show = true;
               break; // 满足显示规则就停止，因为只需要满足一个规则字段即显示
             } else {
@@ -1011,6 +1011,21 @@ export default function useFormCreateApi(props: FormCreateApiProps) {
 
     if (props.formKey.value === FormDesignKeyEnum.OPPORTUNITY_QUOTATION && props.sourceId?.value) {
       if (field.businessKey === 'opportunityId') {
+        specialInitialOptions.value = [
+          {
+            id: props.sourceId?.value,
+            name: sourceName.value || props.initialSourceName?.value,
+          },
+        ];
+        return {
+          defaultValue: initFieldValue(field, props.sourceId?.value || ''),
+          initialOptions: specialInitialOptions.value,
+        };
+      }
+    }
+    if (props.formKey.value === FormDesignKeyEnum.INVOICE && props.sourceId?.value) {
+      // 合同下创建发票，自动带入合同信息
+      if (field.businessKey === 'contractId') {
         specialInitialOptions.value = [
           {
             id: props.sourceId?.value,

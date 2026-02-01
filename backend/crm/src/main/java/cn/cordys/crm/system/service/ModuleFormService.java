@@ -133,7 +133,6 @@ public class ModuleFormService {
      *
      * @param formKey      表单Key
      * @param currentOrgId 当前组织ID
-     *
      * @return 字段集合
      */
     public ModuleFormConfigDTO getConfig(String formKey, String currentOrgId) {
@@ -159,7 +158,6 @@ public class ModuleFormService {
      *
      * @param formKey        表单Key
      * @param organizationId 组织ID
-     *
      * @return 表单配置
      */
     public ModuleFormConfigDTO getBusinessFormConfig(String formKey, String organizationId) {
@@ -201,7 +199,6 @@ public class ModuleFormService {
      * 保存表单配置
      *
      * @param saveParam 保存参数
-     *
      * @return 表单配置
      */
     @OperationLog(module = LogModule.SYSTEM_MODULE, type = LogType.UPDATE, resourceId = "{#saveParam.formKey}")
@@ -370,7 +367,6 @@ public class ModuleFormService {
      * 获取表单所有字段及其属性集合
      *
      * @param formId 表单ID
-     *
      * @return 字段集合
      */
     public List<BaseField> getAllFields(String formId) {
@@ -405,7 +401,6 @@ public class ModuleFormService {
      *
      * @param formConfig    表单配置
      * @param allDataFields 所有数据字段
-     *
      * @return 字段选项集合
      */
     public Map<String, List<OptionDTO>> getOptionMap(ModuleFormConfigDTO formConfig, List<BaseModuleFieldValue> allDataFields) {
@@ -478,7 +473,6 @@ public class ModuleFormService {
      * 平铺列表字段(子表格)
      *
      * @param formConfig 表单配置
-     *
      * @return 字段集合
      */
     public List<BaseField> flattenFormAllFields(ModuleFormConfigDTO formConfig) {
@@ -511,7 +505,6 @@ public class ModuleFormService {
      *
      * @param formKey 表单key
      * @param orgId   组织ID
-     *
      * @return 平铺的字段集合
      */
     public List<BaseField> getFlattenFormFields(String formKey, String orgId) {
@@ -524,7 +517,6 @@ public class ModuleFormService {
      *
      * @param formConfig     表单配置
      * @param allFieldValues 所有字段值
-     *
      * @return 平铺字段值集合
      */
     @SuppressWarnings("unchecked")
@@ -862,13 +854,13 @@ public class ModuleFormService {
 
     public InputNumberField getContractAmountField() {
         InputNumberField amountField = new InputNumberField();
-        amountField.setId(BusinessModuleField.CONTRACT_PRODUCT_SUM_AMOUNT.getKey());
-        amountField.setInternalKey(BusinessModuleField.CONTRACT_PRODUCT_SUM_AMOUNT.getKey());
+        amountField.setId(BusinessModuleField.CONTRACT_TOTAL_AMOUNT.getKey());
+        amountField.setInternalKey(BusinessModuleField.CONTRACT_TOTAL_AMOUNT.getKey());
         amountField.setName("合同金额");
-        amountField.setBusinessKey(BusinessModuleField.CONTRACT_PRODUCT_SUM_AMOUNT.getBusinessKey());
+        amountField.setBusinessKey(BusinessModuleField.CONTRACT_TOTAL_AMOUNT.getBusinessKey());
         amountField.setReadable(false);
         amountField.setEditable(false);
-        amountField.setType(FieldType.INPUT_NUMBER.name());
+        amountField.setType(FieldType.FORMULA.name());
         amountField.setShowLabel(true);
         amountField.setFieldWidth(1F);
         return amountField;
@@ -891,6 +883,7 @@ public class ModuleFormService {
             field.setBusinessKey(constant.getKey());
             field.setType(FieldType.INPUT.name());
             field.setShowLabel(true);
+            field.setReadable(true);
             fields.add(field);
         }
         return fields;
@@ -900,7 +893,6 @@ public class ModuleFormService {
      * 获取指定数据源的子表字段集合
      *
      * @param sourceType 数据源类型
-     *
      * @return 子表字段集合
      */
     private List<BaseField> getSubFieldsBySourceType(String sourceType) {
@@ -928,7 +920,6 @@ public class ModuleFormService {
      * OptionProp转OptionDTO
      *
      * @param options 选项集合
-     *
      * @return 选项DTO集合
      */
     public List<OptionDTO> optionPropToDto(List<OptionProp> options) {
@@ -1113,8 +1104,7 @@ public class ModuleFormService {
     private void handleShowFieldsInit(Map<String, Object> initField, List<ModuleField> initFields) {
         if (initField.containsKey(SHOW_FIELD_KEY)) {
             List<String> showFieldKeys = (List<String>) initField.get(SHOW_FIELD_KEY);
-            List<ModuleField> showFields = moduleFieldMapper.selectListByLambda(new LambdaQueryWrapper<ModuleField>()
-                    .in(ModuleField::getInternalKey, showFieldKeys));
+            List<ModuleField> showFields = selectFieldsByInternalKeys(showFieldKeys);
 
             if (CollectionUtils.isEmpty(showFields)) {
                 // initForm 初始化，数据库没有数据，需要从 initFields 中获取
@@ -1140,6 +1130,17 @@ public class ModuleFormService {
         }
     }
 
+    private List<ModuleField> selectFieldsByInternalKeys(List<String> internalKeys) {
+        return moduleFieldMapper.selectListByLambda(new LambdaQueryWrapper<ModuleField>()
+                .in(ModuleField::getInternalKey, internalKeys));
+    }
+
+    private ModuleField selectFieldsByInternalKey(String internalKey) {
+        ModuleField field = new ModuleField();
+        field.setInternalKey(internalKey);
+        return moduleFieldMapper.selectOne(field);
+    }
+
     /**
      * 组装字段基础信息
      *
@@ -1147,7 +1148,6 @@ public class ModuleFormService {
      * @param formId           表单ID
      * @param pos              字段位置
      * @param controlKeyPreMap 显隐规则Key-ID映射
-     *
      * @return 字段
      */
     private ModuleField supplyFieldInfo(Map<String, Object> fieldMap, String formId, Long pos, Map<String, String> controlKeyPreMap) {
@@ -1246,7 +1246,6 @@ public class ModuleFormService {
      * @param exportHeads 导出头
      * @param formKey     表单Key
      * @param currentOrg  当前组织
-     *
      * @return 自定义导入表头集合
      */
     public List<List<String>> getAllExportHeads(List<ExportHeadDTO> exportHeads, String formKey, String currentOrg) {
@@ -1297,7 +1296,6 @@ public class ModuleFormService {
      * @param formKey     表单Key
      * @param currentOrg  当前组织
      * @param exportHeads 导出表头集合
-     *
      * @return 导出字段ID集合
      */
     public List<String> getExportMergeHeads(String formKey, String currentOrg, List<ExportHeadDTO> exportHeads) {
@@ -1343,7 +1341,6 @@ public class ModuleFormService {
      *
      * @param formKey    表单Key
      * @param currentOrg 当前组织
-     *
      * @return 表头集合
      */
     public List<List<String>> getCustomImportHeadsNoRef(String formKey, String currentOrg) {
@@ -1381,7 +1378,6 @@ public class ModuleFormService {
      *
      * @param formKey    表单Key
      * @param currentOrg 当前组织
-     *
      * @return 字段集合
      */
     public List<BaseField> getAllCustomImportFields(String formKey, String currentOrg) {
@@ -1396,7 +1392,6 @@ public class ModuleFormService {
      * 支持子表头
      *
      * @param headFields 表头字段集合
-     *
      * @return 是否支持
      */
     public boolean supportSubHead(List<BaseField> headFields) {
@@ -1440,7 +1435,6 @@ public class ModuleFormService {
      * 包含重复选项
      *
      * @param options 选项
-     *
      * @return 是否重复选项
      */
     private boolean hasRepeatOption(List<OptionProp> options) {
@@ -1458,7 +1452,6 @@ public class ModuleFormService {
      *
      * @param formKey 表单Key
      * @param orgId   组织ID
-     *
      * @return 是否唯一
      */
     public boolean hasFieldUniqueCheck(String formKey, String orgId, String internalKey) {
@@ -1480,7 +1473,6 @@ public class ModuleFormService {
      * @param <T>              实体类型
      * @param <S>              数据来源类型
      * @param scenarioKey      场景Key
-     *
      * @return 填充结果
      */
     public <T, S> FormLinkFill<T> fillFormLinkValue(T target, S source, ModuleFormConfigDTO targetFormConfig,
@@ -1541,7 +1533,6 @@ public class ModuleFormService {
      * 属性转方法 (name -> setName)
      *
      * @param param 属性名
-     *
      * @return 方法名
      */
     private String capitalizeSetParam(String param) {
@@ -1552,7 +1543,6 @@ public class ModuleFormService {
      * 属性转方法 (name -> getName)
      *
      * @param param 属性名
-     *
      * @return 方法名
      */
     private String capitalizeGetParam(String param) {
@@ -1564,7 +1554,6 @@ public class ModuleFormService {
      *
      * @param options 选项集合
      * @param value   值
-     *
      * @return 文本
      */
     private Object val2Text(List<OptionProp> options, Object value) {
@@ -1584,7 +1573,6 @@ public class ModuleFormService {
      *
      * @param options 选项集合
      * @param text    文本
-     *
      * @return 值
      */
     private Object text2Val(List<OptionProp> options, Object text) {
@@ -1606,9 +1594,7 @@ public class ModuleFormService {
      * @param sourceClass     类对象
      * @param source          数据来源
      * @param sourceFieldVals 自定义数据来源
-     *
      * @return 值
-     *
      * @throws Exception 取值异常
      */
     private TransformSourceApplyDTO applySourceValue(BaseField sourceField, Class<?> sourceClass, Object source, List<BaseModuleFieldValue> sourceFieldVals) throws Exception {
@@ -1641,7 +1627,6 @@ public class ModuleFormService {
      * @param targetClass     目标类
      * @param target          目标实例
      * @param targetFieldVals 目标自定义字段值集合
-     *
      * @throws Exception 入值异常
      */
     private void putTargetFieldVal(BaseField targetField, TransformSourceApplyDTO putVal, Class<?> targetClass, Object target, List<BaseModuleFieldValue> targetFieldVals) throws Exception {
@@ -1667,7 +1652,6 @@ public class ModuleFormService {
      *
      * @param sourceField 来源字段
      * @param actualVal   实际值
-     *
      * @return 展示值
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -1688,7 +1672,6 @@ public class ModuleFormService {
      *
      * @param targetField 目标字段
      * @param sourceVal   来源值
-     *
      * @return 值
      */
     @SuppressWarnings("unchecked")
@@ -1832,6 +1815,36 @@ public class ModuleFormService {
     }
 
     /**
+     * 初始化发票表单联动场景
+     */
+    @SuppressWarnings("unchecked")
+    public void initInvoiceFormScenarioProp() {
+        LambdaQueryWrapper<ModuleForm> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ModuleForm::getFormKey, FormKey.INVOICE.getKey());
+        ModuleForm invoiceForm = moduleFormMapper.selectListByLambda(wrapper).getFirst();
+        ModuleFormBlob invoiceFormBlob = moduleFormBlobMapper.selectByPrimaryKey(invoiceForm.getId());
+        Map<String, Object> propMap = JSON.parseMap(invoiceFormBlob.getProp());
+        Map<String, List<LinkScenario>> linkProp = new HashMap<>(4);
+
+        // 设置默认的 linkFields
+        ModuleField contractNameField = selectFieldsByInternalKey(BusinessModuleField.CONTRACT_NAME.getKey());
+        ModuleField invoiceContractField = selectFieldsByInternalKey(BusinessModuleField.INVOICE_CONTRACT_ID.getKey());
+        List<LinkField> linkFields = new ArrayList<>();
+        if (contractNameField != null && invoiceContractField != null) {
+            LinkField linkField = new LinkField();
+            linkField.setEnable(true);
+            linkField.setCurrent(contractNameField.getId());
+            linkField.setLink(invoiceContractField.getId());
+            linkFields.add(linkField);
+        }
+
+        linkProp.put(FormKey.CONTRACT.getKey(), List.of(LinkScenario.builder().key(LinkScenarioKey.CONTRACT_TO_INVOICE.name()).linkFields(linkFields).build()));
+        propMap.put("linkProp", linkProp);
+        invoiceFormBlob.setProp(JSON.toJSONString(propMap));
+        moduleFormBlobMapper.updateById(invoiceFormBlob);
+    }
+
+    /**
      * 表单属性处理(视图)
      */
     @SuppressWarnings("unchecked")
@@ -1884,7 +1897,6 @@ public class ModuleFormService {
      *
      * @param formKey        表单Key
      * @param organizationId 组织ID
-     *
      * @return 字段列表
      */
     public List<SimpleField> getMcpFields(String formKey, String organizationId) {
@@ -1916,7 +1928,6 @@ public class ModuleFormService {
      *
      * @param showFields 显示字段
      * @param baseField  字段配置
-     *
      * @return 字段唯一Key
      */
     private String getOptionKey(List<String> showFields, BaseField baseField) {
@@ -1931,7 +1942,6 @@ public class ModuleFormService {
      *
      * @param fieldValues 自定义字段值
      * @param formConfig  字段配置
-     *
      * @return 处理后的自定义字段值
      */
     public <T extends BaseResourceField, V extends BaseResourceField> List<BaseModuleFieldValue> resolveSnapshotFields(List<BaseModuleFieldValue> fieldValues,
@@ -1966,7 +1976,6 @@ public class ModuleFormService {
      * @param baseResourceFieldService 字段服务类
      * @param <F>                      字段类型
      * @param <B>                      大字段类型
-     *
      * @return 处理后的字段值列表
      */
     @SuppressWarnings("unchecked")
@@ -2068,7 +2077,6 @@ public class ModuleFormService {
      *
      * @param fvs           所有字段值
      * @param flattenFields 所有字段配置
-     *
      * @return 处理后的字段值
      */
     private List<BaseModuleFieldValue> resolveSubKeyToId(List<BaseModuleFieldValue> fvs, List<BaseField> flattenFields) {
@@ -2100,7 +2108,6 @@ public class ModuleFormService {
      *
      * @param formKey 表单Key
      * @param orgId   组织ID
-     *
      * @return 配置映射
      */
     private Map<String, BaseField> getFieldConfigMapByName(String formKey, String orgId) {
